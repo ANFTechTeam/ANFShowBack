@@ -173,7 +173,7 @@
                                                             "inputs": {
                                                                 "host": {
                                                                     "connection": {
-                                                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                                                     }
                                                                 },
                                                                 "method": "get",
@@ -210,7 +210,7 @@
                                                                 },
                                                                 "host": {
                                                                     "connection": {
-                                                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                                                     }
                                                                 },
                                                                 "method": "post",
@@ -243,7 +243,7 @@
                                                                 },
                                                                 "host": {
                                                                     "connection": {
-                                                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                                                     }
                                                                 },
                                                                 "method": "put",
@@ -939,7 +939,7 @@
                             "inputs": {
                                 "host": {
                                     "connection": {
-                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                     }
                                 },
                                 "method": "get",
@@ -1414,7 +1414,7 @@
                 "parameters": {
                     "$connections": {
                         "value": {
-                            "azuretables": {
+                            "ANFSBTableConnection": {
                                 "connectionId": "[resourceId('Microsoft.Web/connections', 'ANFSBTableConnection')]",
                                 "connectionName": "ANFSBTableConnection",
                                 "id": "[reference(concat('Microsoft.Web/connections/', 'ANFSBTableConnection'), '2016-06-01').api.id]"
