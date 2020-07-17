@@ -341,7 +341,7 @@
                                                                     }
                                                                 },
                                                                 "method": "post",
-                                                                "path": "/Tables/@{encodeURIComponent('daily')}/entities"
+                                                                "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities"
                                                             }
                                                         },
                                                         "Insert_or_Replace_Entity_-_Volume_Running_Cost": {
