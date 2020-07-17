@@ -21,7 +21,7 @@
             "type": "Microsoft.Web/connections",
             "apiVersion": "2016-06-01",
             "location": "eastus2",
-            "name": "azuretables",
+            "name": "ANFSBTableConnection",
             "properties": {
                 "api": {
                     "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
