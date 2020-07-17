@@ -15,10 +15,12 @@
             "type": "String"
         },
         "storage_account": {
-            "value": null
+            "value": null,
+            "type": "String"
         },
         "storage_accessKey": {
-            "value": null
+            "value": null,
+            "type": "String"
         }
     },
     "variables": {},
