@@ -73,156 +73,29 @@
                         }
                     },
                     "actions": {
-                        "Condition_2": {
-                            "actions": {
-                                "Create_CSV_table": {
-                                    "runAfter": {
-                                        "Parse_Volume_List": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "Table",
-                                    "inputs": {
-                                        "columns": [
-                                            {
-                                                "header": "VolumeName",
-                                                "value": "@item()?['VolumeName']"
-                                            },
-                                            {
-                                                "header": "RunningCost",
-                                                "value": "@item()?['RunningCost']"
-                                            },
-                                            {
-                                                "header": "Owner",
-                                                "value": "@item()?['Owner']"
-                                            },
-                                            {
-                                                "header": "ResourceGroup",
-                                                "value": "@item()?['ResourceGroup']"
-                                            },
-                                            {
-                                                "header": "LatestSize",
-                                                "value": "@item()?['LatestSize']"
-                                            },
-                                            {
-                                                "header": "ServiceLevel",
-                                                "value": "@item()?['ServiceLevel']"
-                                            }
-                                        ],
-                                        "format": "CSV",
-                                        "from": "@body('Parse_Volume_List')"
-                                    },
-                                    "description": "item()?['property']"
-                                },
-                                "Create_HTML_table": {
-                                    "runAfter": {
-                                        "Create_CSV_table": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "Table",
-                                    "inputs": {
-                                        "columns": [
-                                            {
-                                                "header": "VolumeName",
-                                                "value": "@item()?['VolumeName']"
-                                            },
-                                            {
-                                                "header": "RunningCost",
-                                                "value": "@item()?['RunningCost']"
-                                            },
-                                            {
-                                                "header": "Owner",
-                                                "value": "@item()?['Owner']"
-                                            },
-                                            {
-                                                "header": "ResourceGroup",
-                                                "value": "@item()?['ResourceGroup']"
-                                            },
-                                            {
-                                                "header": "LatestSize",
-                                                "value": "@item()?['LatestSize']"
-                                            },
-                                            {
-                                                "header": "ServiceLevel",
-                                                "value": "@item()?['ServiceLevel']"
-                                            }
-                                        ],
-                                        "format": "HTML",
-                                        "from": "@body('Parse_Volume_List')"
-                                    }
-                                },
-                                "Parse_Volume_List": {
-                                    "runAfter": {},
-                                    "type": "ParseJson",
-                                    "inputs": {
-                                        "content": "@body('Get_Volume_List_from_Table')?['value']",
-                                        "schema": {
-                                            "content": {
-                                                "items": {
-                                                    "properties": {
-                                                        "LatestSize": {
-                                                            "type": "integer"
-                                                        },
-                                                        "Owner": {
-                                                            "type": "string"
-                                                        },
-                                                        "ResourceGroup": {
-                                                            "type": "string"
-                                                        },
-                                                        "RunningCost": {
-                                                            "type": "number"
-                                                        },
-                                                        "ServiceLevel": {
-                                                            "type": "string"
-                                                        },
-                                                        "VolumeName": {
-                                                            "type": "string"
-                                                        },
-                                                        "odata.etag": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [],
-                                                    "type": "object"
-                                                },
-                                                "type": "array"
-                                            },
-                                            "schema": {
-                                                "properties": {},
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            "runAfter": {
-                                "Get_Volume_List_from_Table": [
-                                    "Succeeded"
-                                ]
-                            },
-                            "expression": {
-                                "or": [
-                                    {
-                                        "equals": [
-                                            "@variables('DayOfMonth')",
-                                            "@variables('LastDayOfMonth')"
-                                        ]
-                                    },
-                                    {
-                                        "equals": [
-                                            1,
-                                            1
-                                        ]
-                                    }
-                                ]
-                            },
-                            "type": "If"
-                        },
-                        "Create_Monthly_Table": {
+                        "Create_Daily_Log_Table": {
                             "runAfter": {
                                 "Set_MonthTableName": [
                                     "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": "ANFSBDailyLog",
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['azuretables_1']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/Tables"
+                            }
+                        },
+                        "Create_Monthly_Table": {
+                            "runAfter": {
+                                "Create_Daily_Log_Table": [
+                                    "Succeeded",
+                                    "Failed"
                                 ]
                             },
                             "type": "ApiConnection",
@@ -1337,6 +1210,152 @@
                                     }
                                 ]
                             }
+                        },
+                        "Test_if_Last_Day_of_Month": {
+                            "actions": {
+                                "Create_CSV_table": {
+                                    "runAfter": {
+                                        "Parse_Volume_List": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Table",
+                                    "inputs": {
+                                        "columns": [
+                                            {
+                                                "header": "VolumeName",
+                                                "value": "@item()?['VolumeName']"
+                                            },
+                                            {
+                                                "header": "RunningCost",
+                                                "value": "@item()?['RunningCost']"
+                                            },
+                                            {
+                                                "header": "Owner",
+                                                "value": "@item()?['Owner']"
+                                            },
+                                            {
+                                                "header": "ResourceGroup",
+                                                "value": "@item()?['ResourceGroup']"
+                                            },
+                                            {
+                                                "header": "LatestSize",
+                                                "value": "@item()?['LatestSize']"
+                                            },
+                                            {
+                                                "header": "ServiceLevel",
+                                                "value": "@item()?['ServiceLevel']"
+                                            }
+                                        ],
+                                        "format": "CSV",
+                                        "from": "@body('Parse_Volume_List')"
+                                    },
+                                    "description": "item()?['property']"
+                                },
+                                "Create_HTML_table": {
+                                    "runAfter": {
+                                        "Create_CSV_table": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Table",
+                                    "inputs": {
+                                        "columns": [
+                                            {
+                                                "header": "VolumeName",
+                                                "value": "@item()?['VolumeName']"
+                                            },
+                                            {
+                                                "header": "RunningCost",
+                                                "value": "@item()?['RunningCost']"
+                                            },
+                                            {
+                                                "header": "Owner",
+                                                "value": "@item()?['Owner']"
+                                            },
+                                            {
+                                                "header": "ResourceGroup",
+                                                "value": "@item()?['ResourceGroup']"
+                                            },
+                                            {
+                                                "header": "LatestSize",
+                                                "value": "@item()?['LatestSize']"
+                                            },
+                                            {
+                                                "header": "ServiceLevel",
+                                                "value": "@item()?['ServiceLevel']"
+                                            }
+                                        ],
+                                        "format": "HTML",
+                                        "from": "@body('Parse_Volume_List')"
+                                    }
+                                },
+                                "Parse_Volume_List": {
+                                    "runAfter": {},
+                                    "type": "ParseJson",
+                                    "inputs": {
+                                        "content": "@body('Get_Volume_List_from_Table')?['value']",
+                                        "schema": {
+                                            "content": {
+                                                "items": {
+                                                    "properties": {
+                                                        "LatestSize": {
+                                                            "type": "integer"
+                                                        },
+                                                        "Owner": {
+                                                            "type": "string"
+                                                        },
+                                                        "ResourceGroup": {
+                                                            "type": "string"
+                                                        },
+                                                        "RunningCost": {
+                                                            "type": "number"
+                                                        },
+                                                        "ServiceLevel": {
+                                                            "type": "string"
+                                                        },
+                                                        "VolumeName": {
+                                                            "type": "string"
+                                                        },
+                                                        "odata.etag": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [],
+                                                    "type": "object"
+                                                },
+                                                "type": "array"
+                                            },
+                                            "schema": {
+                                                "properties": {},
+                                                "type": "object"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_Volume_List_from_Table": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "or": [
+                                    {
+                                        "equals": [
+                                            "@variables('DayOfMonth')",
+                                            "@variables('LastDayOfMonth')"
+                                        ]
+                                    },
+                                    {
+                                        "equals": [
+                                            1,
+                                            1
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
                         },
                         "UTCOffset": {
                             "runAfter": {
