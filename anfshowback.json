@@ -13,6 +13,12 @@
         "connections_office365_externalid": {
             "defaultValue": "/subscriptions/a8dbeb51-fab1-49d4-990c-4c8a7b690578/resourceGroups/sluce.rg/providers/Microsoft.Web/connections/office365",
             "type": "String"
+        },
+        "storage_account": {
+            "value": null
+        },
+        "storage_accessKey": {
+            "value": null
         }
     },
     "variables": {},
@@ -28,7 +34,7 @@
                 },
                 "displayName": "azuretables",
                 "parameterValues": {
-                    "storageaccount": "[parameters('storage_accountName')]",
+                    "storageaccount": "[parameters('storage_account')]",
                     "sharedkey": "[parameters('storage_accessKey')]"
                 }
             }

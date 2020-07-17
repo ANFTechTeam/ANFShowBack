@@ -10,6 +10,8 @@
         },
         "connections_office365_externalid": {
             "value": null
-        }
+        },
+        "storage_accessKey": {
+            "value": null
     }
 }
