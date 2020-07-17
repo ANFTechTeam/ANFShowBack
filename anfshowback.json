@@ -2,7 +2,7 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "workflows_slucebilling_name": {
+        "Logic App Name": {
             "defaultValue": "slucebilling",
             "type": "String"
         },
@@ -14,12 +14,12 @@
             "defaultValue": "/subscriptions/a8dbeb51-fab1-49d4-990c-4c8a7b690578/resourceGroups/sluce.rg/providers/Microsoft.Web/connections/office365",
             "type": "String"
         },
-        "storage_account": {
-            "value": null,
+        "Storage Account": {
+            "defaultvalue": "",
             "type": "String"
         },
-        "storage_accessKey": {
-            "value": null,
+        "Storage Account Access Key": {
+            "defaultvalue": "",
             "type": "String"
         }
     },
@@ -34,31 +34,17 @@
                 "api": {
                     "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
                 },
-                "displayName": "azuretables",
+                "displayName": "ANFSBTableConnection",
                 "parameterValues": {
-                    "storageaccount": "[parameters('storage_account')]",
-                    "sharedkey": "[parameters('storage_accessKey')]"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Web/connections",
-            "apiVersion": "2016-06-01",
-            "location": "eastus2",
-            "name": "office365",
-            "properties": {
-                "api": {
-                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/office365')]"
-                },
-                "displayName": "office365",
-                "parameterValues": {
+                    "storageaccount": "[parameters('Storage Account')]",
+                    "sharedkey": "[parameters('Storage Account Access Key')]"
                 }
             }
         },
         {
             "type": "Microsoft.Logic/workflows",
             "apiVersion": "2017-07-01",
-            "name": "[parameters('workflows_slucebilling_name')]",
+            "name": "[parameters('Logic App Name')]",
             "location": "eastus2",
             "identity": {
                 "principalId": "",
@@ -215,38 +201,6 @@
                                                 "type": "object"
                                             }
                                         }
-                                    }
-                                },
-                                "Send_an_email_(V2)": {
-                                    "runAfter": {
-                                        "Create_HTML_table": [
-                                            "Succeeded"
-                                        ]
-                                    },
-                                    "type": "ApiConnection",
-                                    "inputs": {
-                                        "body": {
-                                            "Attachments": [
-                                                {
-                                                    "ContentBytes": "@{base64(body('Create_HTML_table'))}",
-                                                    "Name": "@{variables('MonthTableName')}.html"
-                                                },
-                                                {
-                                                    "ContentBytes": "@{base64(body('Create_CSV_table'))}",
-                                                    "Name": "@{variables('MonthTableName')}.csv"
-                                                }
-                                            ],
-                                            "Body": "<p>@{body('Create_HTML_table')}</p>",
-                                            "Subject": "ANF Volume Report",
-                                            "To": "luces@netapp.com"
-                                        },
-                                        "host": {
-                                            "connection": {
-                                                "name": "@parameters('$connections')['office365']['connectionId']"
-                                            }
-                                        },
-                                        "method": "post",
-                                        "path": "/v2/Mail"
                                     }
                                 }
                             },
@@ -1453,11 +1407,6 @@
                                 "connectionId": "[parameters('connections_azuretables_externalid')]",
                                 "connectionName": "azuretables",
                                 "id": "/subscriptions/c560a042-4311-40cf-beb5-edc67991179e/providers/Microsoft.Web/locations/eastus2/managedApis/azuretables"
-                            },
-                            "office365": {
-                                "connectionId": "[parameters('connections_office365_externalid')]",
-                                "connectionName": "office365",
-                                "id": "/subscriptions/c560a042-4311-40cf-beb5-edc67991179e/providers/Microsoft.Web/locations/eastus2/managedApis/office365"
                             }
                         }
                     }
