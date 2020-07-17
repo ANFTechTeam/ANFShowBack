@@ -84,7 +84,7 @@
                                 "body": "ANFSBDailyLog",
                                 "host": {
                                     "connection": {
-                                        "name": "@parameters('$connections')['azuretables_1']['connectionId']"
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                     }
                                 },
                                 "method": "post",
@@ -103,7 +103,7 @@
                                 "body": "@variables('MonthTableName')",
                                 "host": {
                                     "connection": {
-                                        "name": "@parameters('$connections')['azuretables']['connectionId']"
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
                                     }
                                 },
                                 "method": "post",
