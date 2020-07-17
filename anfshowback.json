@@ -6,14 +6,6 @@
             "defaultValue": "slucebilling",
             "type": "String"
         },
-        "connections_azuretables_externalid": {
-            "defaultValue": "/subscriptions/a8dbeb51-fab1-49d4-990c-4c8a7b690578/resourceGroups/sluce.rg/providers/Microsoft.Web/connections/azuretables",
-            "type": "String"
-        },
-        "connections_office365_externalid": {
-            "defaultValue": "/subscriptions/a8dbeb51-fab1-49d4-990c-4c8a7b690578/resourceGroups/sluce.rg/providers/Microsoft.Web/connections/office365",
-            "type": "String"
-        },
         "Storage Account": {
             "defaultvalue": "",
             "type": "String"
@@ -1404,9 +1396,9 @@
                     "$connections": {
                         "value": {
                             "azuretables": {
-                                "connectionId": "[parameters('connections_azuretables_externalid')]",
-                                "connectionName": "azuretables",
-                                "id": "/subscriptions/c560a042-4311-40cf-beb5-edc67991179e/providers/Microsoft.Web/locations/eastus2/managedApis/azuretables"
+                                "connectionId": "[resourceId('Microsoft.Web/connections', 'ANFSBTableConnection')]",
+                                "connectionName": "ANFSBTableConnection",
+                                "id": "[reference(concat('Microsoft.Web/connections/', 'ANFSBTableConnection'), '2016-06-01').api.id]"
                             }
                         }
                     }
