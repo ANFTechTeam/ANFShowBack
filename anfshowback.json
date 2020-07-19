@@ -181,7 +181,7 @@
                                                                     }
                                                                 },
                                                                 "method": "get",
-                                                                "path": "/Tables/@{encodeURIComponent('volume')}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')",
+                                                                "path": "/Tables/@{encodeURIComponent('variables('MonthTableName')')}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')",
                                                                 "retryPolicy": {
                                                                     "type": "none"
                                                                 }
