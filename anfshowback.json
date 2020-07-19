@@ -11,7 +11,7 @@
             "type": "String"
         },
         "UTC Offset": {
-            "defaultValue": "-4",
+            "defaultValue": -4,
             "type": "Integer"
         },
         "Storage Account": {
@@ -66,7 +66,7 @@
             "properties": {
                 "state": "Enabled",
                 "integrationAccount": {
-                    "id": "[reference(concat('Microsoft.Web/integrationAccounts/', 'ANFSBIntegration'), '2016-06-01').api.id]"
+                    "id": "[reference(concat('Microsoft.Logic/integrationAccounts/', 'ANFSBIntegration'), '2016-06-01').api.id]"
                 },
                 "definition": {
                     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
@@ -1392,7 +1392,7 @@
                                     {
                                         "name": "UTCOffset",
                                         "type": "integer",
-                                        "value": "[parameters('Location')]"
+                                        "value": -4
                                     }
                                 ]
                             }
