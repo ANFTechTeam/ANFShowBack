@@ -44,7 +44,7 @@
             "name": "ANFSBTableConnection",
             "properties": {
                 "api": {
-                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('Location'), '/managedApis/ANFSBTableConnection')]"
+                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('Location'), '/managedApis/azuretables')]"
                 },
                 "displayName": "ANFSBTableConnection",
                 "parameterValues": {
