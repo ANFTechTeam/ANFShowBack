@@ -1392,7 +1392,7 @@
                                     {
                                         "name": "UTCOffset",
                                         "type": "integer",
-                                        "value": -4
+                                        "value": "@int(parameters('UTC OFfset'))"
                                     }
                                 ]
                             }
