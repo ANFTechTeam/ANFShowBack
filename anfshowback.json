@@ -6,6 +6,10 @@
             "defaultValue": "slucebilling",
             "type": "String"
         },
+        "Location": {
+            "defaultValue": "eastus2",
+            "type": "String"
+        },
         "Storage Account": {
             "defaultvalue": "",
             "type": "String"
@@ -20,7 +24,7 @@
         {
             "type": "Microsoft.Web/connections",
             "apiVersion": "2016-06-01",
-            "location": "eastus2",
+            "location": "[parameters('Location')]",
             "name": "ANFSBTableConnection",
             "properties": {
                 "api": {
@@ -37,7 +41,7 @@
             "type": "Microsoft.Logic/workflows",
             "apiVersion": "2017-07-01",
             "name": "[parameters('Logic App Name')]",
-            "location": "eastus2",
+            "location": "[parameters('Location')]",
             "identity": {
                 "principalId": "",
                 "tenantId": "",
