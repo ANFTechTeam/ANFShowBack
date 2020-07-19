@@ -11,8 +11,8 @@
             "type": "String"
         },
         "UTC Offset": {
-            "defaultValue": -4,
-            "type": "Integer"
+            "defaultValue": "-4",
+            "type": "String"
         },
         "Storage Account": {
             "defaultvalue": "",
@@ -44,7 +44,7 @@
             "name": "ANFSBTableConnection",
             "properties": {
                 "api": {
-                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('Location'), '/managedApis/azuretables')]"
+                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('Location'), '/managedApis/ANFSBTableConnection')]"
                 },
                 "displayName": "ANFSBTableConnection",
                 "parameterValues": {
@@ -66,7 +66,7 @@
             "properties": {
                 "state": "Enabled",
                 "integrationAccount": {
-                    "id": "[reference(concat('Microsoft.Logic/integrationAccounts/', 'ANFSBIntegration'), '2016-06-01').api.id]"
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Logic/integrationAccounts/', 'ANFSBIntegration')]"
                 },
                 "definition": {
                     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
