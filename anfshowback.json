@@ -456,7 +456,8 @@
                                                                 "Parse_Existing_Running_Cost": {
                                                                     "runAfter": {
                                                                         "Get_Existing_Running_Cost": [
-                                                                            "Succeeded"
+                                                                            "Succeeded",
+                                                                            "Failed"
                                                                         ]
                                                                     },
                                                                     "type": "ParseJson",
