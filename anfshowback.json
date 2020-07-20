@@ -145,205 +145,6 @@
                                                 "For_each_Volume": {
                                                     "foreach": "@body('Parse_Volumes')?['value']",
                                                     "actions": {
-                                                        "Condition": {
-                                                            "actions": {
-                                                                "Set_PreviousVolumeCost_to_Zero": {
-                                                                    "runAfter": {},
-                                                                    "type": "SetVariable",
-                                                                    "inputs": {
-                                                                        "name": "PreviousVolumeCost",
-                                                                        "value": 0
-                                                                    }
-                                                                }
-                                                            },
-                                                            "runAfter": {
-                                                                "Parse_Existing_Running_Cost": [
-                                                                    "Succeeded",
-                                                                    "Failed"
-                                                                ]
-                                                            },
-                                                            "else": {
-                                                                "actions": {
-                                                                    "Set_PreviousVolumeCost": {
-                                                                        "runAfter": {},
-                                                                        "type": "SetVariable",
-                                                                        "inputs": {
-                                                                            "name": "PreviousVolumeCost",
-                                                                            "value": "@float(body('Parse_Existing_Running_Cost')?['RunningCost'])"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "expression": {
-                                                                "and": [
-                                                                    {
-                                                                        "equals": [
-                                                                            "@body('Parse_Existing_Running_Cost')?['RunningCost']",
-                                                                            "@null"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "type": "If"
-                                                        },
-                                                        "Get_Existing_Running_Cost": {
-                                                            "runAfter": {
-                                                                "Insert_Entity_-_Daily_Log_Table": [
-                                                                    "Succeeded"
-                                                                ]
-                                                            },
-                                                            "type": "ApiConnection",
-                                                            "inputs": {
-                                                                "host": {
-                                                                    "connection": {
-                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
-                                                                    }
-                                                                },
-                                                                "method": "get",
-                                                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')",
-                                                                "retryPolicy": {
-                                                                    "type": "none"
-                                                                }
-                                                            }
-                                                        },
-                                                        "Insert_Entity_-_Daily_Log_Table": {
-                                                            "runAfter": {
-                                                                "Parse_Volume_Tags": [
-                                                                    "Succeeded"
-                                                                ]
-                                                            },
-                                                            "type": "ApiConnection",
-                                                            "inputs": {
-                                                                "body": {
-                                                                    "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
-                                                                    "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
-                                                                    "Creator": "@{body('Parse_Volume_Tags')?['creator']}",
-                                                                    "DailyCost": "@variables('VolumeCost')",
-                                                                    "Date": "@{split(addHours(utcNow(),variables('UTCOffset')), 'T')[0]}",
-                                                                    "Location": "@{body('Parse_Single_Volume')?['location']}",
-                                                                    "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
-                                                                    "Owner": "@{body('Parse_Volume_Tags')?['owner']}",
-                                                                    "PartitionKey": "1",
-                                                                    "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
-                                                                    "RowKey": "@{concat(addHours(utcNow(),variables('UTCOffset')),body('Parse_Single_Volume')?['properties']?['fileSystemId'])}",
-                                                                    "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
-                                                                    "Size": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
-                                                                    "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
-                                                                    "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
-                                                                },
-                                                                "host": {
-                                                                    "connection": {
-                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
-                                                                    }
-                                                                },
-                                                                "method": "post",
-                                                                "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities"
-                                                            }
-                                                        },
-                                                        "Insert_or_Replace_Entity_-_Volume_Running_Cost": {
-                                                            "runAfter": {
-                                                                "Condition": [
-                                                                    "Succeeded"
-                                                                ]
-                                                            },
-                                                            "type": "ApiConnection",
-                                                            "inputs": {
-                                                                "body": {
-                                                                    "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
-                                                                    "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
-                                                                    "Creator": "@{body('Parse_Volume_Tags')?['creator']}",
-                                                                    "LastDate": "@{split(addHours(utcNow(),variables('UTCOffset')), 'T')[0]}",
-                                                                    "LatestSize": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
-                                                                    "Location": "@{body('Parse_Single_Volume')?['location']}",
-                                                                    "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
-                                                                    "Owner": "@{body('Parse_Volume_Tags')?['owner']}",
-                                                                    "PartitionKey": "1",
-                                                                    "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
-                                                                    "RunningCost": "@add(variables('VolumeCost'),variables('PreviousVolumeCost'))",
-                                                                    "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
-                                                                    "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
-                                                                    "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
-                                                                },
-                                                                "host": {
-                                                                    "connection": {
-                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
-                                                                    }
-                                                                },
-                                                                "method": "put",
-                                                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
-                                                            }
-                                                        },
-                                                        "Parse_Existing_Running_Cost": {
-                                                            "runAfter": {
-                                                                "Get_Existing_Running_Cost": [
-                                                                    "Succeeded",
-                                                                    "Failed"
-                                                                ]
-                                                            },
-                                                            "type": "ParseJson",
-                                                            "inputs": {
-                                                                "content": "@body('Get_Existing_Running_Cost')",
-                                                                "schema": {
-                                                                    "properties": {
-                                                                        "CapacityPool": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "Consumed": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "Creator": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "LastDate": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "LatestSize": {
-                                                                            "type": "integer"
-                                                                        },
-                                                                        "Location": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "NetAppAccount": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "Owner": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "PartitionKey": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "ResourceGroup": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "RowKey": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "RunningCost": {
-                                                                            "type": "number"
-                                                                        },
-                                                                        "ServiceLevel": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "Timestamp": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "VolumeID": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "VolumeName": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "odata.etag": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "odata.metadata": {
-                                                                            "type": "string"
-                                                                        }
-                                                                    },
-                                                                    "type": "object"
-                                                                }
-                                                            }
-                                                        },
                                                         "Parse_Single_Volume": {
                                                             "runAfter": {},
                                                             "type": "ParseJson",
@@ -463,92 +264,345 @@
                                                                 }
                                                             }
                                                         },
-                                                        "Parse_Volume_Tags": {
-                                                            "runAfter": {
-                                                                "Switch": [
-                                                                    "Succeeded"
-                                                                ]
-                                                            },
-                                                            "type": "ParseJson",
-                                                            "inputs": {
-                                                                "content": "@body('Parse_Single_Volume')?['tags']",
-                                                                "schema": {
-                                                                    "properties": {
-                                                                        "creator": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "owner": {
-                                                                            "type": "string"
+                                                        "Test_if_Valid_Volume_ID": {
+                                                            "actions": {
+                                                                "Condition": {
+                                                                    "actions": {
+                                                                        "Set_PreviousVolumeCost_to_Zero": {
+                                                                            "runAfter": {},
+                                                                            "type": "SetVariable",
+                                                                            "inputs": {
+                                                                                "name": "PreviousVolumeCost",
+                                                                                "value": 0
+                                                                            }
                                                                         }
                                                                     },
-                                                                    "type": "object"
+                                                                    "runAfter": {
+                                                                        "Parse_Existing_Running_Cost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "else": {
+                                                                        "actions": {
+                                                                            "Set_PreviousVolumeCost": {
+                                                                                "runAfter": {},
+                                                                                "type": "SetVariable",
+                                                                                "inputs": {
+                                                                                    "name": "PreviousVolumeCost",
+                                                                                    "value": "@float(body('Parse_Existing_Running_Cost')?['RunningCost'])"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "expression": {
+                                                                        "and": [
+                                                                            {
+                                                                                "equals": [
+                                                                                    "@body('Parse_Existing_Running_Cost')?['RunningCost']",
+                                                                                    "@null"
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    "type": "If"
+                                                                },
+                                                                "Convert_Tags_JSON_to_Array": {
+                                                                    "runAfter": {
+                                                                        "Reset_PreviousVolumeCost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "JavaScriptCode",
+                                                                    "inputs": {
+                                                                        "code": "var tagsObj = workflowContext.actions.Parse_Single_Volume.outputs.body.tags;\r\nvar tagsArray = Object.entries(tagsObj);\r\nreturn tagsArray;"
+                                                                    }
+                                                                },
+                                                                "For_Tag_in_Tags": {
+                                                                    "foreach": "@outputs('Convert_Tags_JSON_to_Array')?['body']",
+                                                                    "actions": {
+                                                                        "Add_Tags_to_Daily_Log_Table_Entry": {
+                                                                            "runAfter": {},
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "@{items('For_Tag_in_Tags')[0]}": "@{items('For_Tag_in_Tags')[1]}"
+                                                                                },
+                                                                                "headers": {
+                                                                                    "If-Match": "*"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "patch",
+                                                                                "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities/etag(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(variables('LocalTime'), body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                            }
+                                                                        },
+                                                                        "Merge_Entity": {
+                                                                            "runAfter": {
+                                                                                "Add_Tags_to_Daily_Log_Table_Entry": [
+                                                                                    "Succeeded"
+                                                                                ]
+                                                                            },
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "@{items('For_Tag_in_Tags')[0]}": "@{items('For_Tag_in_Tags')[1]}"
+                                                                                },
+                                                                                "headers": {
+                                                                                    "If-Match": "*"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "patch",
+                                                                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities/etag(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Convert_Tags_JSON_to_Array": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "Foreach"
+                                                                },
+                                                                "Get_Existing_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Insert_Entity_-_Daily_Log_Table": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "get",
+                                                                        "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')",
+                                                                        "retryPolicy": {
+                                                                            "type": "none"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "Insert_Entity_-_Daily_Log_Table": {
+                                                                    "runAfter": {
+                                                                        "Switch": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "body": {
+                                                                            "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
+                                                                            "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
+                                                                            "DailyCost": "@variables('VolumeCost')",
+                                                                            "Date": "@{split(addHours(utcNow(), variables('UTCOffset')), 'T')[0]}",
+                                                                            "Location": "@{body('Parse_Single_Volume')?['location']}",
+                                                                            "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
+                                                                            "PartitionKey": "1",
+                                                                            "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
+                                                                            "RowKey": "@{concat(variables('LocalTime'), body('Parse_Single_Volume')?['properties']?['fileSystemId'])}",
+                                                                            "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
+                                                                            "Size": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
+                                                                            "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
+                                                                            "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
+                                                                        },
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "post",
+                                                                        "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities"
+                                                                    }
+                                                                },
+                                                                "Insert_or_Replace_Entity_-_Volume_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Condition": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "body": {
+                                                                            "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
+                                                                            "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
+                                                                            "LastDate": "@{split(addHours(utcNow(), variables('UTCOffset')), 'T')[0]}",
+                                                                            "LatestSize": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
+                                                                            "Location": "@{body('Parse_Single_Volume')?['location']}",
+                                                                            "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
+                                                                            "PartitionKey": "1",
+                                                                            "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
+                                                                            "RunningCost": "@add(variables('VolumeCost'), variables('PreviousVolumeCost'))",
+                                                                            "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
+                                                                            "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
+                                                                            "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
+                                                                        },
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "put",
+                                                                        "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                    }
+                                                                },
+                                                                "Parse_Existing_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Get_Existing_Running_Cost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ParseJson",
+                                                                    "inputs": {
+                                                                        "content": "@body('Get_Existing_Running_Cost')",
+                                                                        "schema": {
+                                                                            "properties": {
+                                                                                "CapacityPool": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Consumed": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Creator": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "LastDate": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "LatestSize": {
+                                                                                    "type": "integer"
+                                                                                },
+                                                                                "Location": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "NetAppAccount": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "PartitionKey": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "ResourceGroup": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "RowKey": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "RunningCost": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "ServiceLevel": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Timestamp": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "VolumeID": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "VolumeName": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "odata.etag": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "odata.metadata": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "Reset_PreviousVolumeCost": {
+                                                                    "runAfter": {
+                                                                        "Insert_or_Replace_Entity_-_Volume_Running_Cost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "SetVariable",
+                                                                    "inputs": {
+                                                                        "name": "PreviousVolumeCost",
+                                                                        "value": 0
+                                                                    }
+                                                                },
+                                                                "Switch": {
+                                                                    "runAfter": {},
+                                                                    "cases": {
+                                                                        "Premium": {
+                                                                            "case": "Premium",
+                                                                            "actions": {
+                                                                                "Set_variable_2": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('PremiumDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "Standard": {
+                                                                            "case": "Standard",
+                                                                            "actions": {
+                                                                                "Set_variable": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('StandardDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "Ultra": {
+                                                                            "case": "Ultra",
+                                                                            "actions": {
+                                                                                "Set_variable_3": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('UltraDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "default": {
+                                                                        "actions": {}
+                                                                    },
+                                                                    "expression": "@body('Parse_Single_Volume')?['properties']?['serviceLevel']",
+                                                                    "type": "Switch"
                                                                 }
-                                                            }
-                                                        },
-                                                        "Reset_PreviousVolumeCost": {
-                                                            "runAfter": {
-                                                                "Insert_or_Replace_Entity_-_Volume_Running_Cost": [
-                                                                    "Succeeded"
-                                                                ]
                                                             },
-                                                            "type": "SetVariable",
-                                                            "inputs": {
-                                                                "name": "PreviousVolumeCost",
-                                                                "value": 0
-                                                            }
-                                                        },
-                                                        "Switch": {
                                                             "runAfter": {
                                                                 "Parse_Single_Volume": [
                                                                     "Succeeded"
                                                                 ]
                                                             },
-                                                            "cases": {
-                                                                "Premium": {
-                                                                    "case": "Premium",
-                                                                    "actions": {
-                                                                        "Set_variable_2": {
-                                                                            "runAfter": {},
-                                                                            "type": "SetVariable",
-                                                                            "inputs": {
-                                                                                "name": "VolumeCost",
-                                                                                "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('PremiumDaily'))"
-                                                                            }
+                                                            "expression": {
+                                                                "and": [
+                                                                    {
+                                                                        "not": {
+                                                                            "equals": [
+                                                                                "@body('Parse_Single_Volume')?['properties']?['provisioningState']",
+                                                                                "Failed"
+                                                                            ]
                                                                         }
                                                                     }
-                                                                },
-                                                                "Standard": {
-                                                                    "case": "Standard",
-                                                                    "actions": {
-                                                                        "Set_variable": {
-                                                                            "runAfter": {},
-                                                                            "type": "SetVariable",
-                                                                            "inputs": {
-                                                                                "name": "VolumeCost",
-                                                                                "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('StandardDaily'))"
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                },
-                                                                "Ultra": {
-                                                                    "case": "Ultra",
-                                                                    "actions": {
-                                                                        "Set_variable_3": {
-                                                                            "runAfter": {},
-                                                                            "type": "SetVariable",
-                                                                            "inputs": {
-                                                                                "name": "VolumeCost",
-                                                                                "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('UltraDaily'))"
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
+                                                                ]
                                                             },
-                                                            "default": {
-                                                                "actions": {}
-                                                            },
-                                                            "expression": "@body('Parse_Single_Volume')?['properties']?['serviceLevel']",
-                                                            "type": "Switch"
+                                                            "type": "If"
                                                         }
                                                     },
                                                     "runAfter": {
@@ -966,10 +1020,7 @@
                                     }
                                 },
                                 "method": "get",
-                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities",
-                                "queries": {
-                                    "$select": "Owner, VolumeName, RunningCost, LatestSize, ServiceLevel, ResourceGroup"
-                                }
+                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities"
                             }
                         },
                         "Get_Workflow_Properties": {
