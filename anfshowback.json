@@ -1288,11 +1288,7 @@
                         "Test_if_Last_Day_of_Month": {
                             "actions": {
                                 "Create_CSV_table": {
-                                    "runAfter": {
-                                        "Parse_Volume_List": [
-                                            "Succeeded"
-                                        ]
-                                    },
+                                    "runAfter": {},
                                     "type": "Table",
                                     "inputs": {
                                         "format": "CSV",
@@ -1310,49 +1306,6 @@
                                     "inputs": {
                                         "format": "HTML",
                                         "from": "@body('Get_Volume_List_from_Table')?['value']"
-                                    }
-                                },
-                                "Parse_Volume_List": {
-                                    "runAfter": {},
-                                    "type": "ParseJson",
-                                    "inputs": {
-                                        "content": "@body('Get_Volume_List_from_Table')?['value']",
-                                        "schema": {
-                                            "content": {
-                                                "items": {
-                                                    "properties": {
-                                                        "LatestSize": {
-                                                            "type": "integer"
-                                                        },
-                                                        "Owner": {
-                                                            "type": "string"
-                                                        },
-                                                        "ResourceGroup": {
-                                                            "type": "string"
-                                                        },
-                                                        "RunningCost": {
-                                                            "type": "number"
-                                                        },
-                                                        "ServiceLevel": {
-                                                            "type": "string"
-                                                        },
-                                                        "VolumeName": {
-                                                            "type": "string"
-                                                        },
-                                                        "odata.etag": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [],
-                                                    "type": "object"
-                                                },
-                                                "type": "array"
-                                            },
-                                            "schema": {
-                                                "properties": {},
-                                                "type": "object"
-                                            }
-                                        }
                                     }
                                 }
                             },
