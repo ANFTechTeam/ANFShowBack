@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "Logic App Name": {
-            "defaultValue": "slucebilling",
+            "defaultValue": "ANFShowBack",
             "type": "String"
         },
         "Location": {
@@ -1443,7 +1443,7 @@
                                     {
                                         "name": "UTCOffset",
                                         "type": "integer",
-                                        "value": "@int([parameters('UTC Offset')])"
+                                        "value": "[parameters('UTC Offset')]"
                                     }
                                 ]
                             }
