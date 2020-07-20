@@ -23,5 +23,4 @@ When ran...
  3. a new row is added to the table 'ANFSBDailyLog' for each volume.
  4. a row is created (if it doesn't exist) or modified in the table 'ANFSBYYYYMM' which increments the running cost of each volume.
 
-On the last day of each month, the Logic App outputs a table in two formats: CSV and HTML
-You can add an action after these steps to send the reports via email or some other method.
+On the last day of each month, the Logic App outputs a table in two formats: CSV and HTML. You can add an action after these steps to send the reports via email or some other method.
