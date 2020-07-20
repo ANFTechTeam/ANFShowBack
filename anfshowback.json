@@ -1295,34 +1295,8 @@
                                     },
                                     "type": "Table",
                                     "inputs": {
-                                        "columns": [
-                                            {
-                                                "header": "VolumeName",
-                                                "value": "@item()?['VolumeName']"
-                                            },
-                                            {
-                                                "header": "RunningCost",
-                                                "value": "@item()?['RunningCost']"
-                                            },
-                                            {
-                                                "header": "Owner",
-                                                "value": "@item()?['Owner']"
-                                            },
-                                            {
-                                                "header": "ResourceGroup",
-                                                "value": "@item()?['ResourceGroup']"
-                                            },
-                                            {
-                                                "header": "LatestSize",
-                                                "value": "@item()?['LatestSize']"
-                                            },
-                                            {
-                                                "header": "ServiceLevel",
-                                                "value": "@item()?['ServiceLevel']"
-                                            }
-                                        ],
                                         "format": "CSV",
-                                        "from": "@body('Parse_Volume_List')"
+                                        "from": "@body('Get_Volume_List_from_Table')?['value']"
                                     },
                                     "description": "item()?['property']"
                                 },
@@ -1334,34 +1308,8 @@
                                     },
                                     "type": "Table",
                                     "inputs": {
-                                        "columns": [
-                                            {
-                                                "header": "VolumeName",
-                                                "value": "@item()?['VolumeName']"
-                                            },
-                                            {
-                                                "header": "RunningCost",
-                                                "value": "@item()?['RunningCost']"
-                                            },
-                                            {
-                                                "header": "Owner",
-                                                "value": "@item()?['Owner']"
-                                            },
-                                            {
-                                                "header": "ResourceGroup",
-                                                "value": "@item()?['ResourceGroup']"
-                                            },
-                                            {
-                                                "header": "LatestSize",
-                                                "value": "@item()?['LatestSize']"
-                                            },
-                                            {
-                                                "header": "ServiceLevel",
-                                                "value": "@item()?['ServiceLevel']"
-                                            }
-                                        ],
                                         "format": "HTML",
-                                        "from": "@body('Parse_Volume_List')"
+                                        "from": "@body('Get_Volume_List_from_Table')?['value']"
                                     }
                                 },
                                 "Parse_Volume_List": {
