@@ -8,7 +8,9 @@ An Azure Logic App to report estimated costs of individual volumes.
 
 ## Installation
 
-Click the button below to deploy to Azure. You will need to key in the UTC Offset for you timezone, your existing Storage Account and access key.
+Click the button below to deploy to Azure. You will need to provide the Location, the UTC Offset for your timezone, your existing Storage Account, and Storage Account Access Key.
+
+Once the Logic App is deployed, you will need to give the logic app 'Reader' permission to your Subscription.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FANFTechTeam%2FANFShowBack%2Fmaster%2Fanfshowback.json)
 

@@ -402,7 +402,7 @@
                                                                             "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
                                                                             "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
                                                                             "DailyCost": "@variables('VolumeCost')",
-                                                                            "Date": "@{split(addHours(utcNow(), variables('UTCOffset')), 'T')[0]}",
+                                                                            "Date": "@{split(addHours(utcNow(), int(variables('UTCOffset'))), 'T')[0]}",
                                                                             "Location": "@{body('Parse_Single_Volume')?['location']}",
                                                                             "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
                                                                             "PartitionKey": "1",
@@ -433,7 +433,7 @@
                                                                         "body": {
                                                                             "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
                                                                             "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
-                                                                            "LastDate": "@{split(addHours(utcNow(), variables('UTCOffset')), 'T')[0]}",
+                                                                            "LastDate": "@{split(addHours(utcNow(), int(variables('UTCOffset'))), 'T')[0]}",
                                                                             "LatestSize": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
                                                                             "Location": "@{body('Parse_Single_Volume')?['location']}",
                                                                             "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
@@ -1216,7 +1216,7 @@
                                     {
                                         "name": "LocalTime",
                                         "type": "string",
-                                        "value": "@{addhours(utcNow(), variables('UTCOffset'))}"
+                                        "value": "@{addhours(utcNow(), int(variables('UTCOffset')))}"
                                     }
                                 ]
                             }
@@ -1233,7 +1233,7 @@
                                     {
                                         "name": "MonthTableName",
                                         "type": "string",
-                                        "value": "@{concat('ANF', addhours(utcNow(), variables('UTCOffset'), 'yyyyMM'))}"
+                                        "value": "@{concat('ANF', addhours(utcNow(), int(variables('UTCOffset')), 'yyyyMM'))}"
                                     }
                                 ]
                             }
@@ -1442,7 +1442,7 @@
                                 "variables": [
                                     {
                                         "name": "UTCOffset",
-                                        "type": "integer",
+                                        "type": "string",
                                         "value": "[parameters('UTC Offset')]"
                                     }
                                 ]
