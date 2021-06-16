@@ -411,7 +411,7 @@
                                                                             "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
                                                                             "Size": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
                                                                             "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
-                                                                            "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
+                                                                            "VolumeName": "@{split(body('Parse_Single_Volume')?['name'],'/')[2]}"
                                                                         },
                                                                         "host": {
                                                                             "connection": {
@@ -442,7 +442,7 @@
                                                                             "RunningCost": "@add(variables('VolumeCost'), variables('PreviousVolumeCost'))",
                                                                             "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
                                                                             "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
-                                                                            "VolumeName": "@{body('Parse_Single_Volume')?['properties']?['name']}"
+                                                                            "VolumeName": "@{split(body('Parse_Single_Volume')?['name'],'/')[2]}"
                                                                         },
                                                                         "host": {
                                                                             "connection": {
@@ -1321,12 +1321,6 @@
                                         "equals": [
                                             "@variables('DayOfMonth')",
                                             "@variables('LastDayOfMonth')"
-                                        ]
-                                    },
-                                    {
-                                        "equals": [
-                                            1,
-                                            1
                                         ]
                                     }
                                 ]
