@@ -6,6 +6,10 @@ An Azure Logic App to report estimated costs of individual volumes.
 
 1. Azure Storage Account - this storage account will be used to store the table data for ANFShowBack. You will need to provide the Storage Account Name and Access Key.
 
+## **Disclaimer**
+
+**This logic app (ANFShowback) is provided as is and is not supported by NetApp or Microsoft. You are encouraged to modify to fit your specific environment and/or requirements. It is strongly recommended to test the functionality before deploying to any business critical or production environments.**
+
 ## Installation
 
 Click the button below to deploy to Azure. You will need to provide the Location, the UTC Offset for your timezone, your existing Storage Account, and Storage Account Access Key.
