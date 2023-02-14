@@ -1,0 +1,1398 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Logic App Name": {
+            "defaultValue": "ANFShowBack",
+            "type": "String"
+        },
+        "Location": {
+            "defaultValue": "eastus2",
+            "type": "String"
+        },
+        "UTC Offset": {
+            "defaultValue": "-4",
+            "type": "String"
+        },
+        "Storage Account": {
+            "defaultvalue": "",
+            "type": "String"
+        },
+        "Storage Account Access Key": {
+            "defaultvalue": "",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Logic/integrationAccounts",
+            "apiVersion": "2016-06-01",
+            "name": "ANFSBIntegration",
+            "location": "[parameters('Location')]",
+            "sku": {
+                "name": "Free"
+            },
+            "properties": {
+                "state": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "location": "[parameters('Location')]",
+            "name": "ANFSBTableConnection",
+            "properties": {
+                "api": {
+                    "id": "[concat('subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('Location'), '/managedApis/azuretables')]"
+                },
+                "displayName": "ANFSBTableConnection",
+                "parameterValues": {
+                    "storageaccount": "[parameters('Storage Account')]",
+                    "sharedkey": "[parameters('Storage Account Access Key')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('Logic App Name')]",
+            "location": "[parameters('Location')]",
+            "identity": {
+                "principalId": "",
+                "tenantId": "",
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "state": "Enabled",
+                "integrationAccount": {
+                    "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Logic/integrationAccounts/', 'ANFSBIntegration')]"
+                },
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "Recurrence": {
+                            "recurrence": {
+                                "frequency": "Day",
+                                "interval": 1,
+                                "schedule": {
+                                    "hours": [
+                                        "20"
+                                    ],
+                                    "minutes": [
+                                        30
+                                    ]
+                                },
+                                "timeZone": "Eastern Standard Time"
+                            },
+                            "type": "Recurrence"
+                        }
+                    },
+                    "actions": {
+                        "Create_Daily_Log_Table": {
+                            "runAfter": {
+                                "Set_MonthTableName": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": "ANFSBDailyLog",
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/Tables"
+                            }
+                        },
+                        "Create_Monthly_Table": {
+                            "runAfter": {
+                                "Create_Daily_Log_Table": [
+                                    "Succeeded",
+                                    "Failed"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "body": "@variables('MonthTableName')",
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                    }
+                                },
+                                "method": "post",
+                                "path": "/Tables"
+                            }
+                        },
+                        "For_each_Resource_Group": {
+                            "foreach": "@body('Parse_Resource_Groups')?['value']",
+                            "actions": {
+                                "For_each_NetApp_Account": {
+                                    "foreach": "@body('Parse_NetApp_Accounts')?['value']",
+                                    "actions": {
+                                        "For_each_Capacity_Pool": {
+                                            "foreach": "@body('Parse_Capacity_Pools')?['value']",
+                                            "actions": {
+                                                "For_each_Volume": {
+                                                    "foreach": "@body('Parse_Volumes')?['value']",
+                                                    "actions": {
+                                                        "Parse_Single_Volume": {
+                                                            "runAfter": {},
+                                                            "type": "ParseJson",
+                                                            "inputs": {
+                                                                "content": "@items('For_each_Volume')",
+                                                                "schema": {
+                                                                    "properties": {
+                                                                        "etag": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "location": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "properties": {
+                                                                            "properties": {
+                                                                                "baremetalTenantId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "creationToken": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "exportPolicy": {
+                                                                                    "properties": {
+                                                                                        "rules": {
+                                                                                            "type": "array"
+                                                                                        }
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                },
+                                                                                "fileSystemId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "mountTargets": {
+                                                                                    "items": {
+                                                                                        "properties": {
+                                                                                            "endIp": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "fileSystemId": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "gateway": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "ipAddress": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "mountTargetId": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "netmask": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "provisioningState": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "smbServerFQDN": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "startIp": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "subnet": {
+                                                                                                "type": "string"
+                                                                                            }
+                                                                                        },
+                                                                                        "required": [],
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "type": "array"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "ownerId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "protocolTypes": {
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "type": "array"
+                                                                                },
+                                                                                "provisioningState": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "serviceLevel": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "subnetId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "usageThreshold": {
+                                                                                    "type": "integer"
+                                                                                },
+                                                                                "usedBytes": {
+                                                                                    "type": "integer"
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        },
+                                                                        "tags": {
+                                                                            "properties": {},
+                                                                            "type": "object"
+                                                                        },
+                                                                        "type": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "Test_if_Valid_Volume_ID": {
+                                                            "actions": {
+                                                                "Condition": {
+                                                                    "actions": {
+                                                                        "Set_PreviousVolumeCost_to_Zero": {
+                                                                            "runAfter": {},
+                                                                            "type": "SetVariable",
+                                                                            "inputs": {
+                                                                                "name": "PreviousVolumeCost",
+                                                                                "value": 0
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Parse_Existing_Running_Cost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "else": {
+                                                                        "actions": {
+                                                                            "Set_PreviousVolumeCost": {
+                                                                                "runAfter": {},
+                                                                                "type": "SetVariable",
+                                                                                "inputs": {
+                                                                                    "name": "PreviousVolumeCost",
+                                                                                    "value": "@float(body('Parse_Existing_Running_Cost')?['RunningCost'])"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "expression": {
+                                                                        "and": [
+                                                                            {
+                                                                                "equals": [
+                                                                                    "@body('Parse_Existing_Running_Cost')?['RunningCost']",
+                                                                                    "@null"
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    "type": "If"
+                                                                },
+                                                                "Convert_Tags_JSON_to_Array": {
+                                                                    "runAfter": {
+                                                                        "Reset_PreviousVolumeCost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "JavaScriptCode",
+                                                                    "inputs": {
+                                                                        "code": "var tagsObj = workflowContext.actions.Parse_Single_Volume.outputs.body.tags;\r\nvar tagsArray = Object.entries(tagsObj);\r\nreturn tagsArray;"
+                                                                    }
+                                                                },
+                                                                "For_Tag_in_Tags": {
+                                                                    "foreach": "@outputs('Convert_Tags_JSON_to_Array')?['body']",
+                                                                    "actions": {
+                                                                        "Add_Tags_to_Daily_Log_Table_Entry": {
+                                                                            "runAfter": {},
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "@{items('For_Tag_in_Tags')[0]}": "@{items('For_Tag_in_Tags')[1]}"
+                                                                                },
+                                                                                "headers": {
+                                                                                    "If-Match": "*"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "patch",
+                                                                                "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities/etag(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(variables('LocalTime'), body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                            }
+                                                                        },
+                                                                        "Merge_Entity": {
+                                                                            "runAfter": {
+                                                                                "Add_Tags_to_Daily_Log_Table_Entry": [
+                                                                                    "Succeeded"
+                                                                                ]
+                                                                            },
+                                                                            "type": "ApiConnection",
+                                                                            "inputs": {
+                                                                                "body": {
+                                                                                    "@{items('For_Tag_in_Tags')[0]}": "@{items('For_Tag_in_Tags')[1]}"
+                                                                                },
+                                                                                "headers": {
+                                                                                    "If-Match": "*"
+                                                                                },
+                                                                                "host": {
+                                                                                    "connection": {
+                                                                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                                    }
+                                                                                },
+                                                                                "method": "patch",
+                                                                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities/etag(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "runAfter": {
+                                                                        "Convert_Tags_JSON_to_Array": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "Foreach"
+                                                                },
+                                                                "Get_Existing_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Insert_Entity_-_Daily_Log_Table": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "get",
+                                                                        "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')",
+                                                                        "retryPolicy": {
+                                                                            "type": "none"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "Insert_Entity_-_Daily_Log_Table": {
+                                                                    "runAfter": {
+                                                                        "Switch": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "body": {
+                                                                            "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
+                                                                            "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
+                                                                            "DailyCost": "@variables('VolumeCost')",
+                                                                            "Date": "@{split(addHours(utcNow(), int(variables('UTCOffset'))), 'T')[0]}",
+                                                                            "Location": "@{body('Parse_Single_Volume')?['location']}",
+                                                                            "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
+                                                                            "PartitionKey": "1",
+                                                                            "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
+                                                                            "RowKey": "@{concat(variables('LocalTime'), body('Parse_Single_Volume')?['properties']?['fileSystemId'])}",
+                                                                            "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
+                                                                            "Size": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
+                                                                            "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
+                                                                            "VolumeName": "@{split(body('Parse_Single_Volume')?['name'],'/')[2]}"
+                                                                        },
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "post",
+                                                                        "path": "/Tables/@{encodeURIComponent('ANFSBDailyLog')}/entities"
+                                                                    }
+                                                                },
+                                                                "Insert_or_Replace_Entity_-_Volume_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Condition": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ApiConnection",
+                                                                    "inputs": {
+                                                                        "body": {
+                                                                            "CapacityPool": "@{split(body('Parse_Single_Volume')?['name'], '/')[1]}",
+                                                                            "Consumed": "@{body('Parse_Single_Volume')?['properties']?['usedBytes']}",
+                                                                            "LastDate": "@{split(addHours(utcNow(), int(variables('UTCOffset'))), 'T')[0]}",
+                                                                            "LatestSize": "@int(body('Parse_Single_Volume')?['properties']?['usageThreshold'])",
+                                                                            "Location": "@{body('Parse_Single_Volume')?['location']}",
+                                                                            "NetAppAccount": "@{split(body('Parse_Single_Volume')?['name'], '/')[0]}",
+                                                                            "PartitionKey": "1",
+                                                                            "ResourceGroup": "@{items('For_each_Resource_Group')?['name']}",
+                                                                            "RunningCost": "@add(variables('VolumeCost'), variables('PreviousVolumeCost'))",
+                                                                            "ServiceLevel": "@{items('For_each_Volume')?['properties']?['serviceLevel']}",
+                                                                            "VolumeID": "@{items('For_each_Volume')?['properties']?['fileSystemId']}",
+                                                                            "VolumeName": "@{split(body('Parse_Single_Volume')?['name'],'/')[2]}"
+                                                                        },
+                                                                        "host": {
+                                                                            "connection": {
+                                                                                "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                                                            }
+                                                                        },
+                                                                        "method": "put",
+                                                                        "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities(PartitionKey='@{encodeURIComponent('1')}',RowKey='@{encodeURIComponent(concat(body('Parse_Single_Volume')?['properties']?['name'],body('Parse_Single_Volume')?['properties']?['fileSystemId']))}')"
+                                                                    }
+                                                                },
+                                                                "Parse_Existing_Running_Cost": {
+                                                                    "runAfter": {
+                                                                        "Get_Existing_Running_Cost": [
+                                                                            "Succeeded",
+                                                                            "Failed"
+                                                                        ]
+                                                                    },
+                                                                    "type": "ParseJson",
+                                                                    "inputs": {
+                                                                        "content": "@body('Get_Existing_Running_Cost')",
+                                                                        "schema": {
+                                                                            "properties": {
+                                                                                "CapacityPool": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Consumed": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Creator": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "LastDate": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "LatestSize": {
+                                                                                    "type": "integer"
+                                                                                },
+                                                                                "Location": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "NetAppAccount": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "PartitionKey": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "ResourceGroup": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "RowKey": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "RunningCost": {
+                                                                                    "type": "number"
+                                                                                },
+                                                                                "ServiceLevel": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "Timestamp": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "VolumeID": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "VolumeName": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "odata.etag": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "odata.metadata": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "Reset_PreviousVolumeCost": {
+                                                                    "runAfter": {
+                                                                        "Insert_or_Replace_Entity_-_Volume_Running_Cost": [
+                                                                            "Succeeded"
+                                                                        ]
+                                                                    },
+                                                                    "type": "SetVariable",
+                                                                    "inputs": {
+                                                                        "name": "PreviousVolumeCost",
+                                                                        "value": 0
+                                                                    }
+                                                                },
+                                                                "Switch": {
+                                                                    "runAfter": {},
+                                                                    "cases": {
+                                                                        "Premium": {
+                                                                            "case": "Premium",
+                                                                            "actions": {
+                                                                                "Set_variable_2": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('PremiumDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "Standard": {
+                                                                            "case": "Standard",
+                                                                            "actions": {
+                                                                                "Set_variable": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('StandardDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "Ultra": {
+                                                                            "case": "Ultra",
+                                                                            "actions": {
+                                                                                "Set_variable_3": {
+                                                                                    "runAfter": {},
+                                                                                    "type": "SetVariable",
+                                                                                    "inputs": {
+                                                                                        "name": "VolumeCost",
+                                                                                        "value": "@mul(div(body('Parse_Single_Volume')?['properties']?['usageThreshold'],1073741824),variables('UltraDaily'))"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "default": {
+                                                                        "actions": {}
+                                                                    },
+                                                                    "expression": "@body('Parse_Single_Volume')?['properties']?['serviceLevel']",
+                                                                    "type": "Switch"
+                                                                }
+                                                            },
+                                                            "runAfter": {
+                                                                "Parse_Single_Volume": [
+                                                                    "Succeeded"
+                                                                ]
+                                                            },
+                                                            "expression": {
+                                                                "and": [
+                                                                    {
+                                                                        "not": {
+                                                                            "equals": [
+                                                                                "@body('Parse_Single_Volume')?['properties']?['provisioningState']",
+                                                                                "Failed"
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "type": "If"
+                                                        }
+                                                    },
+                                                    "runAfter": {
+                                                        "Parse_Volumes": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "Foreach"
+                                                },
+                                                "Get_Volumes": {
+                                                    "runAfter": {},
+                                                    "type": "Http",
+                                                    "inputs": {
+                                                        "authentication": {
+                                                            "type": "ManagedServiceIdentity"
+                                                        },
+                                                        "method": "GET",
+                                                        "uri": "https://management.usgovcloudapi.net@{items('For_each_Capacity_Pool')?['id']}/volumes?api-version=2017-08-15"
+                                                    }
+                                                },
+                                                "Parse_Volumes": {
+                                                    "runAfter": {
+                                                        "Get_Volumes": [
+                                                            "Succeeded"
+                                                        ]
+                                                    },
+                                                    "type": "ParseJson",
+                                                    "inputs": {
+                                                        "content": "@body('Get_Volumes')",
+                                                        "schema": {
+                                                            "properties": {
+                                                                "value": {
+                                                                    "items": {
+                                                                        "properties": {
+                                                                            "etag": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "location": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "properties": {
+                                                                                "properties": {
+                                                                                    "baremetalTenantId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "creationToken": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "exportPolicy": {
+                                                                                        "properties": {
+                                                                                            "rules": {
+                                                                                                "type": "array"
+                                                                                            }
+                                                                                        },
+                                                                                        "type": "object"
+                                                                                    },
+                                                                                    "fileSystemId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "mountTargets": {
+                                                                                        "items": {
+                                                                                            "properties": {
+                                                                                                "endIp": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "fileSystemId": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "gateway": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "ipAddress": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "mountTargetId": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "netmask": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "provisioningState": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "smbServerFQDN": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "startIp": {
+                                                                                                    "type": "string"
+                                                                                                },
+                                                                                                "subnet": {
+                                                                                                    "type": "string"
+                                                                                                }
+                                                                                            },
+                                                                                            "required": [],
+                                                                                            "type": "object"
+                                                                                        },
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "ownerId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "protocolTypes": {
+                                                                                        "items": {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        "type": "array"
+                                                                                    },
+                                                                                    "provisioningState": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "serviceLevel": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "subnetId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "usageThreshold": {
+                                                                                        "type": "integer"
+                                                                                    },
+                                                                                    "usedBytes": {
+                                                                                        "type": "integer"
+                                                                                    }
+                                                                                },
+                                                                                "type": "object"
+                                                                            },
+                                                                            "tags": {
+                                                                                "properties": {},
+                                                                                "type": "object"
+                                                                            },
+                                                                            "type": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [],
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": "array"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "runAfter": {
+                                                "Parse_Capacity_Pools": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "Foreach"
+                                        },
+                                        "Get_Capacity_Pools": {
+                                            "runAfter": {},
+                                            "type": "Http",
+                                            "inputs": {
+                                                "authentication": {
+                                                    "type": "ManagedServiceIdentity"
+                                                },
+                                                "method": "GET",
+                                                "uri": "https://management.usgovcloudapi.net/subscriptions/@{variables('subid')}/resourceGroups/@{items('For_each_Resource_Group')?['name']}/providers/Microsoft.NetApp/netAppAccounts/@{items('For_each_NetApp_Account')?['name']}/capacityPools?api-version=2017-08-15"
+                                            }
+                                        },
+                                        "Parse_Capacity_Pools": {
+                                            "runAfter": {
+                                                "Get_Capacity_Pools": [
+                                                    "Succeeded"
+                                                ]
+                                            },
+                                            "type": "ParseJson",
+                                            "inputs": {
+                                                "content": "@body('Get_Capacity_Pools')",
+                                                "schema": {
+                                                    "properties": {
+                                                        "value": {
+                                                            "items": {
+                                                                "properties": {
+                                                                    "etag": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "location": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "properties": {
+                                                                        "properties": {
+                                                                            "name": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "poolId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "provisioningState": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "serviceLevel": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "size": {
+                                                                                "type": "integer"
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    },
+                                                                    "type": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [],
+                                                                "type": "object"
+                                                            },
+                                                            "type": "array"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {
+                                        "Parse_NetApp_Accounts": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Foreach"
+                                },
+                                "Get_NetApp_Accounts": {
+                                    "runAfter": {},
+                                    "type": "Http",
+                                    "inputs": {
+                                        "authentication": {
+                                            "type": "ManagedServiceIdentity"
+                                        },
+                                        "method": "GET",
+                                        "uri": "https://management.usgovcloudapi.net/subscriptions/@{variables('subid')}/resourceGroups/@{items('For_each_Resource_Group')?['name']}/providers/Microsoft.NetApp/netAppAccounts?api-version=2017-08-15"
+                                    }
+                                },
+                                "Parse_NetApp_Accounts": {
+                                    "runAfter": {
+                                        "Get_NetApp_Accounts": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ParseJson",
+                                    "inputs": {
+                                        "content": "@body('Get_NetApp_Accounts')",
+                                        "schema": {
+                                            "properties": {
+                                                "value": {
+                                                    "items": {
+                                                        "properties": {
+                                                            "etag": {
+                                                                "type": "string"
+                                                            },
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "location": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "properties": {
+                                                                "properties": {
+                                                                    "activeDirectories": {
+                                                                        "items": {
+                                                                            "properties": {
+                                                                                "activeDirectoryId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "dns": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "domain": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "organizationalUnit": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "password": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "site": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "smbServerName": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "username": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [],
+                                                                            "type": "object"
+                                                                        },
+                                                                        "type": "array"
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "provisioningState": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "tags": {
+                                                                "properties": {
+                                                                    "creator": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "type": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [],
+                                                        "type": "object"
+                                                    },
+                                                    "type": "array"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Parse_Resource_Groups": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach"
+                        },
+                        "Get_DayOfMonth": {
+                            "runAfter": {
+                                "Set_SubID": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "DayOfMonth",
+                                        "type": "string",
+                                        "value": "@{startOfDay(variables('LocalTime'))}"
+                                    }
+                                ]
+                            }
+                        },
+                        "Get_LastDayOfMonth": {
+                            "runAfter": {
+                                "Get_DayOfMonth": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "LastDayOfMonth",
+                                        "type": "string",
+                                        "value": "@{subtractfromtime(startofmonth(addToTime(variables('LocalTime'), 1, 'Month')), 1, 'Day')}"
+                                    }
+                                ]
+                            }
+                        },
+                        "Get_Resource_Groups": {
+                            "runAfter": {
+                                "Create_Monthly_Table": [
+                                    "Succeeded",
+                                    "Failed"
+                                ]
+                            },
+                            "type": "Http",
+                            "inputs": {
+                                "authentication": {
+                                    "type": "ManagedServiceIdentity"
+                                },
+                                "method": "GET",
+                                "uri": "https://management.usgovcloudapi.net/subscriptions/@{variables('subid')}/resourceGroups?api-version=2020-05-01"
+                            }
+                        },
+                        "Get_Volume_List_from_Table": {
+                            "runAfter": {
+                                "For_each_Resource_Group": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ApiConnection",
+                            "inputs": {
+                                "host": {
+                                    "connection": {
+                                        "name": "@parameters('$connections')['ANFSBTableConnection']['connectionId']"
+                                    }
+                                },
+                                "method": "get",
+                                "path": "/Tables/@{encodeURIComponent(variables('MonthTableName'))}/entities"
+                            }
+                        },
+                        "Get_Workflow_Properties": {
+                            "runAfter": {
+                                "UltraDaily_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "workflowproperties",
+                                        "type": "object",
+                                        "value": "@workflow()"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_PreviousVolumeCost_Variable_(do_not_edit)": {
+                            "runAfter": {
+                                "Initialize_VolumeCost_Variable_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "PreviousVolumeCost",
+                                        "type": "float"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_VolumeCost_Variable_(do_not_edit)": {
+                            "runAfter": {
+                                "Set_LocalTime_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "VolumeCost",
+                                        "type": "float"
+                                    }
+                                ]
+                            }
+                        },
+                        "Parse_Resource_Groups": {
+                            "runAfter": {
+                                "Get_Resource_Groups": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@body('Get_Resource_Groups')",
+                                "schema": {
+                                    "properties": {
+                                        "value": {
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "location": {
+                                                        "type": "string"
+                                                    },
+                                                    "managedBy": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "properties": {
+                                                        "properties": {
+                                                            "provisioningState": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "tags": {
+                                                        "properties": {
+                                                            "creator": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [],
+                                                "type": "object"
+                                            },
+                                            "type": "array"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "Parse_Workflow_Properties": {
+                            "runAfter": {
+                                "Get_Workflow_Properties": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@variables('workflowproperties')",
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "location": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "run": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "type": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "type": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "PremiumDaily_(do_not_edit)": {
+                            "runAfter": {
+                                "StandardDaily_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "PremiumDaily",
+                                        "type": "float",
+                                        "value": "@mul(variables('PremiumHourly'),24)"
+                                    }
+                                ]
+                            }
+                        },
+                        "PremiumHourly": {
+                            "runAfter": {
+                                "StandardHourly": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "PremiumHourly",
+                                        "type": "float",
+                                        "value": 0.000403
+                                    }
+                                ]
+                            }
+                        },
+                        "Set_LocalTime_(do_not_edit)": {
+                            "runAfter": {
+                                "UTCOffset": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "LocalTime",
+                                        "type": "string",
+                                        "value": "@{addhours(utcNow(), int(variables('UTCOffset')))}"
+                                    }
+                                ]
+                            }
+                        },
+                        "Set_MonthTableName": {
+                            "runAfter": {
+                                "Get_LastDayOfMonth": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "MonthTableName",
+                                        "type": "string",
+                                        "value": "@{concat('ANF', addhours(utcNow(), int(variables('UTCOffset')), 'yyyyMM'))}"
+                                    }
+                                ]
+                            }
+                        },
+                        "Set_SubID": {
+                            "runAfter": {
+                                "Parse_Workflow_Properties": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "subid",
+                                        "type": "string",
+                                        "value": "@{split(body('Parse_Workflow_Properties')?['id'],'/')[2]}"
+                                    }
+                                ]
+                            }
+                        },
+                        "StandardDaily_(do_not_edit)": {
+                            "runAfter": {
+                                "Initialize_PreviousVolumeCost_Variable_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "StandardDaily",
+                                        "type": "float",
+                                        "value": "@mul(variables('StandardHourly'),24)"
+                                    }
+                                ]
+                            }
+                        },
+                        "StandardHourly": {
+                            "runAfter": {},
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "StandardHourly",
+                                        "type": "float",
+                                        "value": 0.000202
+                                    }
+                                ]
+                            }
+                        },
+                        "Test_if_Last_Day_of_Month": {
+                            "actions": {
+                                "Create_CSV_table": {
+                                    "runAfter": {},
+                                    "type": "Table",
+                                    "inputs": {
+                                        "format": "CSV",
+                                        "from": "@body('Get_Volume_List_from_Table')?['value']"
+                                    },
+                                    "description": "item()?['property']"
+                                },
+                                "Create_HTML_table": {
+                                    "runAfter": {
+                                        "Create_CSV_table": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Table",
+                                    "inputs": {
+                                        "format": "HTML",
+                                        "from": "@body('Get_Volume_List_from_Table')?['value']"
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Get_Volume_List_from_Table": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "expression": {
+                                "or": [
+                                    {
+                                        "equals": [
+                                            "@variables('DayOfMonth')",
+                                            "@variables('LastDayOfMonth')"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "If"
+                        },
+                        "UTCOffset": {
+                            "runAfter": {
+                                "UltraHourly": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "UTCOffset",
+                                        "type": "string",
+                                        "value": "[parameters('UTC Offset')]"
+                                    }
+                                ]
+                            }
+                        },
+                        "UltraDaily_(do_not_edit)": {
+                            "runAfter": {
+                                "PremiumDaily_(do_not_edit)": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "UltraDaily",
+                                        "type": "float",
+                                        "value": "@mul(variables('UltraHourly'),24)"
+                                    }
+                                ]
+                            }
+                        },
+                        "UltraHourly": {
+                            "runAfter": {
+                                "PremiumHourly": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "UltraHourly",
+                                        "type": "float",
+                                        "value": 0.000538
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "ANFSBTableConnection": {
+                                "connectionId": "[resourceId('Microsoft.Web/connections', 'ANFSBTableConnection')]",
+                                "connectionName": "ANFSBTableConnection",
+                                "id": "[reference(concat('Microsoft.Web/connections/', 'ANFSBTableConnection'), '2016-06-01').api.id]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
