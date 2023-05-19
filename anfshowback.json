@@ -1108,9 +1108,9 @@
                     "$connections": {
                         "value": {
                             "ANFSBTableConnection": {
-                                "connectionId": "[parameters('connections_ANFSBTableConnection_externalid')]",
+                                "connectionId": "[resourceId('Microsoft.Web/connections', 'ANFSBTableConnection')]",
                                 "connectionName": "ANFSBTableConnection",
-                                "id": "/subscriptions/c560a042-4311-40cf-beb5-edc67991179e/providers/Microsoft.Web/locations/eastus/managedApis/azuretables"
+                                "id": "[reference(concat('Microsoft.Web/connections/', 'ANFSBTableConnection'), '2016-06-01').api.id]"
                             }
                         }
                     }
