@@ -26,18 +26,6 @@
     "variables": {},
     "resources": [
         {
-            "type": "Microsoft.Logic/integrationAccounts",
-            "apiVersion": "2016-06-01",
-            "name": "ANFSBIntegration",
-            "location": "[parameters('Location')]",
-            "sku": {
-                "name": "Free"
-            },
-            "properties": {
-                "state": "Enabled"
-            }
-        },
-        {
             "type": "Microsoft.Web/connections",
             "apiVersion": "2016-06-01",
             "location": "[parameters('Location')]",
